@@ -1,6 +1,10 @@
 package com.dylan.wifipositioning
 
+import android.Manifest
+import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
+import android.content.pm.PackageManager
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
@@ -8,8 +12,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Message
 import android.support.v7.app.AppCompatActivity
-import android.widget.Button
-import android.widget.TextView
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
@@ -24,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     private val WifiConnectedS = "\nwifi is connected"
     private val WifiNotConnectedI = 114
     private val WifiNotConnectedS = "\nwifi is not connected"
+    private val REQUEST_CODE_ASK_PERMISSIONS = 115
 
     private val mWifiManager by lazy {
         getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -71,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         Utils.showLog(TAG, "on resume")
 
-        getWifiState()
+        checkFineLocationPermission()
     }
 
     private fun getWifiState() {
@@ -137,5 +140,47 @@ class MainActivity : AppCompatActivity() {
 
     private fun sortByLevel(scanResultList: ArrayList<ScanResult>) {
         Collections.sort(scanResultList, { t1, t2 -> t2.level - t1.level})
+    }
+
+    private fun checkFineLocationPermission() {
+        val hasFineLocationPermission = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (hasFineLocationPermission != PackageManager.PERMISSION_GRANTED) {
+            Utils.showLog(TAG, "has not fine location permission")
+
+            if (!shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                showPermissionDialog("You need to allow access to fine location",
+                        DialogInterface.OnClickListener { dialog, which ->
+                            Utils.showInstalledAppDetails(this, packageName)
+                        })
+                return
+            }
+
+            requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CODE_ASK_PERMISSIONS)
+            return
+        } else {
+            getWifiState()
+        }
+    }
+
+    private fun showPermissionDialog(message: String, okListener: DialogInterface.OnClickListener) {
+        AlertDialog.Builder(this)
+                .setMessage(message)
+                .setPositiveButton("OK", okListener)
+                .setNegativeButton("Cancel", null)
+                .create()
+                .show()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        when (requestCode) {
+            REQUEST_CODE_ASK_PERMISSIONS -> if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission Granted
+                getWifiState()
+            } else {
+                // Permission Denied
+                Utils.showLog(TAG, "Manifest.permission.ACCESS_FINE_LOCATION access failed.")
+            }
+            else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        }
     }
 }

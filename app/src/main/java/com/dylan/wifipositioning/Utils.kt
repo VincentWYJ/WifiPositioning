@@ -4,6 +4,11 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.util.Log
 import android.widget.Toast
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+import android.os.Build
+import android.provider.Settings
 
 
 object Utils {
@@ -31,5 +36,26 @@ object Utils {
 
     fun showLog(tag: String, msg: String) {
         Log.i(tag, msg)
+    }
+
+    private val SCHEME = "package"
+    private val APP_PKG_NAME_21 = "com.android.settings.ApplicationPkgName"
+    private val APP_PKG_NAME_22 = "pkg"
+    private val APP_DETAILS_PACKAGE_NAME = "com.android.settings"
+    private val APP_DETAILS_CLASS_NAME = "com.android.settings.InstalledAppDetails"
+    fun showInstalledAppDetails(context: Context, packageName: String) {
+        val intent = Intent()
+        val apiLevel = Build.VERSION.SDK_INT
+        if (apiLevel >= 9) {
+            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+            val uri = Uri.fromParts(SCHEME, packageName, null)
+            intent.data = uri
+        } else {
+            val appPkgName = if (apiLevel == 8) APP_PKG_NAME_22 else APP_PKG_NAME_21
+            intent.action = Intent.ACTION_VIEW
+            intent.setClassName(APP_DETAILS_PACKAGE_NAME, APP_DETAILS_CLASS_NAME)
+            intent.putExtra(appPkgName, packageName)
+        }
+        context.applicationContext.startActivity(intent)
     }
 }
