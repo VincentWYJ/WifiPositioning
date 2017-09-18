@@ -3,15 +3,15 @@ package com.dylan.wifipositioning
 import android.content.Context
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiInfo
-import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
 import android.net.wifi.WifiManager
+import android.os.Bundle
 import android.os.Handler
 import android.os.Message
+import android.support.v7.app.AppCompatActivity
 import android.widget.Button
 import android.widget.TextView
+import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
-import kotlin.collections.ArrayList
 
 
 class MainActivity : AppCompatActivity() {
@@ -25,18 +25,6 @@ class MainActivity : AppCompatActivity() {
     private val WifiNotConnectedI = 114
     private val WifiNotConnectedS = "\nwifi is not connected"
 
-    private val mWifiInfo by lazy {
-        findViewById(R.id.wifi_info) as TextView
-    }
-
-    private val mGetConnectedWifi by lazy {
-        findViewById(R.id.get_connected_wifi) as Button
-    }
-
-    private val mGetALlWifi by lazy {
-        findViewById(R.id.get_all_wifi) as Button
-    }
-
     private val mWifiManager by lazy {
         getSystemService(Context.WIFI_SERVICE) as WifiManager
     }
@@ -44,10 +32,10 @@ class MainActivity : AppCompatActivity() {
     private val mHandler = object: Handler() {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
-                WifiEnabledI ->  mWifiInfo.text = msg.obj as String
-                WifiNotEnabledI -> mWifiInfo.text = msg.obj as String
-                WifiConnectedI -> mWifiInfo.text = msg.obj as String
-                WifiNotConnectedI ->  mWifiInfo.text = msg.obj as String
+                WifiEnabledI ->  wifi_info.text = msg.obj as String
+                WifiNotEnabledI -> wifi_info.text = msg.obj as String
+                WifiConnectedI -> wifi_info.text = msg.obj as String
+                WifiNotConnectedI ->  wifi_info.text = msg.obj as String
             }
         }
     }
@@ -68,11 +56,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initView() {
-        mGetConnectedWifi.setOnClickListener {
+        setSupportActionBar(toolbar)
+
+        get_connected_wifi.setOnClickListener {
             _ -> getConnectedWifiInfo()
         }
 
-        mGetALlWifi.setOnClickListener {
+        get_all_wifi.setOnClickListener {
             _ -> getAllWifiInfo()
         }
     }
@@ -107,7 +97,7 @@ class MainActivity : AppCompatActivity() {
         val wifiInfo = mWifiManager.connectionInfo as WifiInfo
         val wifiString = StringBuilder()
         if (wifiInfo.ssid != null) {
-            wifiString.append("\n" + "ssid: " + wifiInfo.ssid + "\n")
+            wifiString.append("\n" + "ssid: " + wifiInfo.ssid.replace("\"", "") + "\n")
             wifiString.append("macAddress: " + wifiInfo.bssid + "\n")
             wifiString.append("ipAddress: " + Utils.transIntToIp(wifiInfo.ipAddress) + "\n")
             wifiString.append("rssi: " + wifiInfo.rssi + "\n")
