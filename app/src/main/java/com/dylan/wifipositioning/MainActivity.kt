@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiInfo
@@ -27,6 +28,7 @@ class MainActivity : AppCompatActivity() {
     private val WifiNotConnectedI = 114
     private val WifiNotConnectedS = "\nwifi is not connected"
     private val REQUEST_CODE_ASK_PERMISSIONS = 115
+     private val ACCESS_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION
 
     private val mWifiManager by lazy {
         getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -143,19 +145,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkFineLocationPermission() {
-        val hasFineLocationPermission = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+        val hasFineLocationPermission = checkSelfPermission(ACCESS_FINE_LOCATION)
+        Utils.showLog(TAG, "" + hasFineLocationPermission)
         if (hasFineLocationPermission != PackageManager.PERMISSION_GRANTED) {
-            Utils.showLog(TAG, "has not fine location permission")
+            Utils.showLog(TAG, "has not $ACCESS_FINE_LOCATION")
 
-            if (!shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                showPermissionDialog("You need to allow access to fine location",
+            val sp = getSharedPreferences(ACCESS_FINE_LOCATION, Context.MODE_PRIVATE)
+            val access = sp.getBoolean(ACCESS_FINE_LOCATION, false)
+
+            if (access && !shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION)) {
+                showPermissionDialog("You need to allow $ACCESS_FINE_LOCATION",
                         DialogInterface.OnClickListener { dialog, which ->
                             Utils.showInstalledAppDetails(this, packageName)
                         })
                 return
             }
 
-            requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQUEST_CODE_ASK_PERMISSIONS)
+            if (!access) {
+                val edit = sp.edit()
+                edit.putBoolean(ACCESS_FINE_LOCATION, true)
+                edit.commit()
+            }
+            requestPermissions(arrayOf(ACCESS_FINE_LOCATION), REQUEST_CODE_ASK_PERMISSIONS)
             return
         } else {
             getWifiState()
@@ -178,7 +189,7 @@ class MainActivity : AppCompatActivity() {
                 getWifiState()
             } else {
                 // Permission Denied
-                Utils.showLog(TAG, "Manifest.permission.ACCESS_FINE_LOCATION access failed.")
+                Utils.showLog(TAG, "$ACCESS_FINE_LOCATION access failed.")
             }
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
