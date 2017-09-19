@@ -4,14 +4,17 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
+import android.provider.Settings
 import android.support.v7.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
@@ -99,7 +102,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val wifiInfo = mWifiManager.connectionInfo as WifiInfo
+        val wifiInfo = mWifiManager.connectionInfo
         val wifiString = StringBuilder()
         if (wifiInfo.ssid != null) {
             wifiString.append("\n" + "ssid: " + wifiInfo.ssid.replace("\"", "") + "\n")
@@ -117,6 +120,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun getAllWifiInfo() {
         Utils.showLog(TAG, "get all wifi info")
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if(!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) &&
+                !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+            return
+        }
 
         if (!mWifiManager.isWifiEnabled) {
             sendMessage(WifiNotEnabledS, WifiNotEnabledI)
@@ -124,19 +133,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         val scanResultList = mWifiManager.scanResults as ArrayList<ScanResult>
-        sortByLevel(scanResultList)
         val wifiString = StringBuilder()
-        for (scanResult in scanResultList) {
-            if (scanResult.SSID != null) {
-                val wifiStringTemp = StringBuilder()
-                wifiStringTemp.append("ssid: " + scanResult.SSID + "\n")
-                wifiStringTemp.append("macAddress: " + scanResult.BSSID + "\n")
-                wifiStringTemp.append("rssi: " + scanResult.level + "\n")
+        if (scanResultList.size > 0) {
+            sortByLevel(scanResultList)
+            scanResultList.map {
+                if (it.SSID != null) {
+                    val wifiStringTemp = StringBuilder()
+                    wifiStringTemp.append("ssid: " + it.SSID + "\n")
+                    wifiStringTemp.append("macAddress: " + it.BSSID + "\n")
+                    wifiStringTemp.append("rssi: " + it.level + "\n")
 
-                wifiString.append("\n" + wifiStringTemp.toString())
+                    wifiString.append("\n" + wifiStringTemp.toString())
+                }
             }
         }
-
         sendMessage(wifiString.toString(), WifiEnabledI)
     }
 
