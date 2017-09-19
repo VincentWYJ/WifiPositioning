@@ -5,7 +5,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.net.wifi.ScanResult
@@ -132,6 +131,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        mWifiManager.startScan()
         val scanResultList = mWifiManager.scanResults as ArrayList<ScanResult>
         val wifiString = StringBuilder()
         if (scanResultList.size > 0) {
@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
 
             if (access && !shouldShowRequestPermissionRationale(ACCESS_FINE_LOCATION)) {
                 showPermissionDialog("You need to allow $ACCESS_FINE_LOCATION",
-                        DialogInterface.OnClickListener { dialog, which ->
+                        DialogInterface.OnClickListener { _, _ ->
                             Utils.showInstalledAppDetails(this, packageName)
                         })
                 return
